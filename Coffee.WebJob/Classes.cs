@@ -13,4 +13,9 @@ namespace Coffee.WebJob
         public string Level { get; set; }
         public DateTime Timestamp { get; set; }
     }
+
+    public class CoffeeFamine
+    {
+        public DateTime Timestamp { get; set; }
+    }
 }

@@ -1,6 +1,0 @@
-{
-   "schedule": "*/15 8-17 * * 1-5"
-}
-
- && curl -sm 30 k.wdt.io/pttr.kallstrom@gmail.com/coffee-job?c=*/15_8-17_*_*_*
-

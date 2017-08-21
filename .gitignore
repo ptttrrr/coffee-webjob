@@ -4,6 +4,7 @@
 
 #superdupersecretsettings
 Coffee.WebJob/secret.config
+Coffee.WebJob/secretAzure.config
 
 # User-specific files
 *.suo
