@@ -11,6 +11,7 @@ using Newtonsoft.Json;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Diagnostics;
+using System.Text;
 
 namespace Coffee.WebJob
 {
@@ -20,7 +21,7 @@ namespace Coffee.WebJob
         public static DateTime LastHour { get; set; }
 
         // Triggered every 15 minutes, between 8am-5pm, mon-fri.
-        public static void TimerJob([TimerTrigger("0 */1 8-17 * * 1-5")] TimerInfo timerInfo) //temp to every minutes
+        public static void TimerJob([TimerTrigger("0 */15 8-17 * * 1-5")] TimerInfo timerInfo)
         {
             // Init task to consume coffee data
             Task t = new Task(DownloadPageAsync);
@@ -106,13 +107,18 @@ namespace Coffee.WebJob
                 if (s.Level == "0.0")
                     outOfCoffee = true;
                 else
-                    outOfCoffee = true; // CHANGE AFTER TEST!!
+                {
+                    outOfCoffee = false;
+                    break;
+                }
+                    
+                
             }
 
             DateTime timestamp = lastHourStatus.Select(s => s.Timestamp).Last();
 
             if (outOfCoffee)
-                AlertIfCoffeeNeedsRefill(timestamp).Wait();
+                AlertIfCoffeeNeedsRefill(timestamp.ToString()).Wait();
             else
                 Trace.TraceInformation("Coffee levels have not reached disaster mode.");
         }
@@ -129,20 +135,25 @@ namespace Coffee.WebJob
 
         // Calling API about low coffee levels which triggers an zapier.com function that sends an email alert
         [NoAutomaticTrigger]
-        static async Task AlertIfCoffeeNeedsRefill(DateTime _timestamp)
+        static async Task AlertIfCoffeeNeedsRefill(string _timestamp)
         {
             string personalEndpoint = ConfigurationManager.AppSettings["myEndpoint"];
 
+            CoffeeFamine sendData = new CoffeeFamine()
+            {
+                Timestamp = _timestamp
+            };
+
+            string json = JsonConvert.SerializeObject(sendData);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
             using (var client = new HttpClient())
             {
-                client.BaseAddress = new Uri(personalEndpoint + "api/CoffeeStatus");
+                client.BaseAddress = new Uri(personalEndpoint + "api/CoffeeStatus/");
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var sendData = new CoffeeFamine { Timestamp = _timestamp };
-                var content = new StringContent(sendData.ToString());
-
-                HttpResponseMessage response = await client.PostAsync(personalEndpoint, content);
+                HttpResponseMessage response = await client.PostAsync(client.BaseAddress, new StringContent(json, Encoding.UTF8, "application/json"));
 
                 if (!response.IsSuccessStatusCode)
                     Trace.TraceError("Error when trying to post to external API: " + response.StatusCode);

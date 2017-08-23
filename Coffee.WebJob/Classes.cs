@@ -16,6 +16,6 @@ namespace Coffee.WebJob
 
     public class CoffeeFamine
     {
-        public DateTime Timestamp { get; set; }
+        public string Timestamp { get; set; }
     }
 }
